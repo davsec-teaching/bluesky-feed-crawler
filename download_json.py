@@ -15,6 +15,25 @@ def create_session(username, password):
     accessJwt = response.json()['accessJwt']
     return accessJwt
 
+def download_post(uri, accessJwt):
+    url = "https://bsky.social/xrpc/app.bsky.feed.getPostThread"
+    headers = {
+            "Authorization": "Bearer " + accessJwt,
+            "Content-Type": "application/json"
+            }
+
+    params = {
+            "uri": uri,
+            "depth": "10"
+    }
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+# Headers with Authorization Token
+headers = {
+    "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+
 
 def download_feed(accessJwt):
     feed_list = []
@@ -25,14 +44,16 @@ def download_feed(accessJwt):
             }
     response = requests.get(url, headers = headers)
     for item in response.json()['feed']:
-        feed_list.append(item)
+        post_with_replies = download_post(item['post']['uri'], accessJwt)
+        feed_list.append(post_with_replies)
     cursor = response.json()['cursor']
-    for i in range (0, 10):
+    for i in range (0, 20):
         cursored_url = url + cursor
         response = requests.get(cursored_url, headers = headers)
         cursor = response.json()['cursor']
         for item in response.json()['feed']:
-            feed_list.append(item)
+            post_with_replies = download_post(item['post']['uri'], accessJwt)
+            feed_list.append(post_with_replies)
 
     return {"feed": feed_list}
 
